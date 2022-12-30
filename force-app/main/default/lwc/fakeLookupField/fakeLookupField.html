@@ -1,0 +1,198 @@
+<!--
+* ─────────────────────────────────────────────────────────────────────────────────────────────────┐
+* fakeLookupField: LWC that fakes being a lookup field. Is passed a list of records with Id, Name
+* and a Secondary attribute, and allows filtering through those in the field. When a record is 
+* selected, changes look to simulate a selected record in a lookup. Allows resetting the selection 
+* and informing the parent component of Id and Name selected.
+* Based on and heavily modified from: 
+*   - https://github.com/tushar30/LWC-Lookup/blob/master/lwcCustomLookup/lwcCustomLookup.html
+*
+* ──────────────────────────────────────────────────────────────────────────────────────────────────
+* @author         Federico Abella   <fede.abellam@gmail.com>
+* @modifiedBy     Federico Abella   <fede.abellam@gmail.com>
+* @maintainedBy   Federico Abella   <fede.abellam@gmail.com>
+* @version        1.0
+* @created        2022-12-30
+* @modified       2022-12-30
+* @systemLayer    UI
+* ──────────────────────────────────────────────────────────────────────────────────────────────────
+* @changes
+* ─────────────────────────────────────────────────────────────────────────────────────────────────┘
+-->
+<template>
+    <div>
+        <div class="slds-form-element">
+            <div class="slds-form-element__control">
+                <!--Dynamically change class depending on whether record is selected-->
+                <div class={containerClassName}>
+                    <!--Dynamically change class depending on whether dropdown is open-->
+                    <div 
+                    class={dropdownClassName} 
+                    data-id="resultBox" 
+                    aria-expanded="false" 
+                    aria-haspopup="listbox" 
+                    role="combobox">
+                        <div 
+                        class="slds-combobox__form-element slds-input-has-icon
+                            slds-input-has-icon_left-right" 
+                        role="none">
+                            <!--If a record is selected, display as an unclickable button with
+                            icon and name, and a reset button to clear the selection (unless the 
+                            component is "name locked" to be display only)-->
+                            <template if:true={selectedRecordName}>
+                                <span 
+                                class="slds-icon_container slds-icon-standard-account 
+                                    slds-combobox__input-entity-icon">
+                                    <lightning-icon 
+                                    class="slds-icon slds-icon_small" 
+                                    icon-name={iconName} 
+                                    alternative-text="icon">
+                                    </lightning-icon>
+                                </span>
+                                <button type="button"
+                                class="slds-input_faux slds-combobox__input 
+                                    slds-combobox__input-value">
+                                    <span
+                                    class="slds-truncate">
+                                        {selectedRecordName}
+                                    </span>
+                                </button>
+                                <template if:false={isNameLocked}>
+                                    <button 
+                                    class="slds-input__icon slds-input__icon_right slds-button 
+                                        slds-button_icon" 
+                                    onclick={resetData}>
+                                        <lightning-icon 
+                                        class="slds-button__icon" 
+                                        icon-name="utility:clear" 
+                                        size="x-small" 
+                                        alternative-text="icon">
+                                        </lightning-icon>
+                                        <span class="slds-assistive-text">
+                                            {clearLabel}
+                                        </span>
+                                    </button>
+                                </template>
+                            </template>
+                            <!--If no record has been selected, component is instead an input which 
+                            opens a dropdown on click and allows searching through records-->
+                            <template if:false={selectedRecordName}>
+                                <span 
+                                class="slds-icon_container slds-icon-standard-account 
+                                    slds-combobox__input-entity-icon">
+                                    <lightning-icon 
+                                    class="slds-icon slds-icon_small" 
+                                    icon-name={iconName} 
+                                    alternative-text="icon">
+                                    </lightning-icon>
+                                </span>
+                                <span>
+                                <lightning-input
+                                variant="label-hidden"
+                                label=""
+                                placeholder={inputPlaceholder}
+                                onchange={searchField}
+                                onfocus={openDropdown}
+                                onblur={closeDropdown}
+                                value={searchValue}
+                                disabled={isDisabled}>
+                                </lightning-input>
+                                </span>
+                                <span 
+                                class="slds-icon_container slds-icon-utility-search 
+                                    slds-input__icon slds-input__icon_right">
+                                    <lightning-icon 
+                                    class="slds-icon slds-icon_small 
+                                        slds-icon-text-default" 
+                                    icon-name="utility:search" 
+                                    size="x-small" 
+                                    alternative-text="icon">
+                                    </lightning-icon>
+                                </span> 
+                            </template>
+                        </div>
+                    
+                        <!--Dropdown list to select from-->
+                        <div 
+                        id="listbox-id-1" 
+                        class="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid" 
+                        role="listbox">
+                            <ul 
+                            class="slds-listbox slds-listbox_vertical" 
+                            role="presentation">
+                            <!--If there are any records to show, display as listbox options with
+                            an icon, name, and secondary meta line-->
+                                <template if:true={filteredRecords}>
+                                    <template for:each={filteredRecords} for:item="record">
+                                        <li 
+                                        role="presentation" 
+                                        class="slds-listbox__item" 
+                                        key={record.Id}
+                                        >
+                                            <!--Each listbox option handles being clicked on to set
+                                            the selected record-->
+                                            <div 
+                                            data-id={record.Id} 
+                                            data-name={record.Name} 
+                                            onclick={setSelectedRecord}
+                                            class="slds-media slds-listbox__option 
+                                                slds-listbox__option_entity 
+                                                slds-listbox__option_has-meta"
+                                            role="option">
+                                                <span 
+                                                class="slds-media__figure 
+                                                    slds-listbox__option-icon">
+                                                    <span 
+                                                    class="slds-icon_container 
+                                                    slds-icon-standard-account"
+                                                    aria-hidden="true">
+                                                        <lightning-icon 
+                                                            class="slds-icon slds-icon_small" 
+                                                            icon-name={iconName} 
+                                                            alternative-text="icon"
+                                                            size="small">
+                                                        </lightning-icon>
+                                                    </span>
+                                                </span>
+                                                <span class="slds-media__body">
+                                                    <span 
+                                                    class="sds-listbox__option-text 
+                                                    slds-listbox__option-text_entity">
+                                                        {record.NamePreMark}
+                                                        <mark>{record.NameMark}</mark>
+                                                        {record.NamePostMark}
+                                                    </span>
+                                                    <!--Secondary (meta) line can be set to only 
+                                                    show the object type, or also one additional 
+                                                    (secondary) field on which search can also be 
+                                                    made-->
+                                                    <span 
+                                                    class="slds-listbox__option-meta 
+                                                        slds-listbox__option-meta_entity">
+                                                        {objectName} 
+                                                        <template if:true={showSecondaryLine}>
+                                                            • {record.SecondaryPreMark}
+                                                            <mark>{record.SecondaryMark}</mark>
+                                                            {record.SecondaryPostMark}
+                                                        </template>
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </template>
+                                <!--If no records match the search string, return a message-->
+                                <template if:false={filteredRecords.length}>
+                                    <div 
+                                    class="slds-text-heading_small slds-var-p-left_medium">
+                                        {noResultLabel}
+                                    </div>
+                                </template>
+                            </ul>
+                        </div> 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
