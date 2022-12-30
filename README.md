@@ -4,7 +4,7 @@ When building some Lightning Web Components, there may be a situation when a use
 
 ## How it works
 
-This version is entirely client-side. Getting the set of records to search through is left to the parent component, as is handling what to do when a record is selected, or when a previous selection is cleared. The set of records is passed to this component with `Id`, and `Name` attributes, and an optional `Secondary` attribute. Both `Name` and `Secondary` represent the text fields the user is able to search through. More information on parameters and events can be found ![here]().
+This version is entirely client-side. Getting the set of records to search through is left to the parent component, as is handling what to do when a record is selected, or when a previous selection is cleared. The set of records is passed to this component with `Id`, and `Name` attributes, and an optional `Secondary` attribute. Both `Name` and `Secondary` represent the text fields the user is able to search through. More information on parameters and events can be found [here](https://github.com/FedeAbella/sfdc-fake-lookup-lwc/blob/master/force-app/main/default/lwc/fakeLookupField/parameters.md).
 
 # What's next
 
